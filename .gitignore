@@ -1,19 +1,32 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-.env
 .venv
 env/
 venv/
 .pytest_cache/
-inputs/paragony/*.md
-!inputs/paragony/test_receipt.md
-inputs/inbox/*
-archive/*
-receipt_cache.json
+
+# Sensitive data
+.env
+google_key.json
 google_key.json
 credentials.json
 token.json
 history.json
+
+# User files
+inputs/paragony/*
+!inputs/paragony/test_receipt.md
+inputs/inbox/*
+archive/*
+data/vault/*
+vault/
 *.log
+app.log
+watcher.log
 voice_*.ogg
+
+# OS
+.DS_Store
+Thumbs.db

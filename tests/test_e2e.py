@@ -44,7 +44,7 @@ def test_e2e_finance_flow_mocked():
         
     with patch('finanse.INPUT_DIR', TEST_INPUT_PARAGONY), \
          patch('finanse.ARCHIVE_DIR', TEST_ARCHIVE), \
-         patch('finanse.get_text_from_image', return_value="OCR DATA"), \
+         patch('finanse.get_text_from_file', return_value="OCR DATA"), \
          patch('finanse.parse_receipt_with_openai', return_value={"shop": "Test", "total": 100}), \
          patch('finanse.save_to_postgres', return_value=True) as mock_db:
          

@@ -17,31 +17,26 @@ Lekki, mobilny asystent osobisty. Bez zbędnego zarządzania magazynem. Skupiony
 *   **Watcher (`watcher.py`)**: Nasłuchuje zmian na dysku/folderach wejściowych i automatycznie wywołuje odpowiednie procesy.
 *   **Bot (`bot.py`)**: Główny interfejs Telegram. Obsługuje zdjęcia, tekst i wiadomości głosowe.
 
-## Instalacja
+## Architektura (Cloud Edition)
+Projekt zoptymalizowany pod serwery o ograniczonych zasobach (np. **Mikr.us**):
+- **Logic**: OpenAI GPT-4o-mini (bardzo niskie zużycie RAM).
+- **OCR**: Google Vision API (Cloud).
+- **Audio**: OpenAI Whisper (Cloud).
+- **Baza**: PostgreSQL (Mikr.us psql01).
+- **Zasoby**: Wymaga < 1GB RAM.
 
-1.  Zainstaluj zależności:
-    ```bash
-    pip install -r requirements.txt
-    ```
-2.  Skonfiguruj `.env` (klucze API dla OpenAI, Telegrama i dane bazy PostgreSQL).
-3.  Przygotuj `google_key.json` (Service Account) dla Google Vision OCR.
+## Serwer Mikr.us (Wdrożenie)
 
-## Uruchomienie
+1. **Połącz się przez SSH**: `ssh root@joanna114.mikrus.xyz -p10114`
+2. **Uruchom skrypt konfiguracji**:
+   ```bash
+   chmod +x setup_mikrus.sh run_all.sh
+   ./setup_mikrus.sh
+   ```
+3. **Konfiguracja**: Uzupełnij `.env` oraz wgraj `google_key.json` i `credentials.json`.
+4. **Uruchomienie**: `./run_all.sh`
 
-### 1. Tryb Wszystko-w-jednym (Voice Brain)
-Najprostszy sposób na start:
-```bash
-./start_voice_brain.sh
-```
-Uruchamia Watchera oraz Bota Telegrama w jednej sesji.
-
-### 2. CLI (Narzędzia administratorskie)
-```bash
-python cli.py
-```
-
-## Dokumentacja
-
-👉 **[INSTRUKCJA CLI](docs/CLI_MANUAL.md)**
-👉 **[PRZETWARZANIE PARAGONÓW](docs/RECEIPT_PIPELINE.md)**
-👉 **[PRZEWODNIK WDROŻENIA](docs/DEPLOYMENT_GUIDE.md)**
+## Zarządzanie
+- Lista usług: `screen -ls`
+- Konsola bota: `screen -r brainbot` (Wyjście: `Ctrl+A, D`)
+- CLI Admin: `python cli.py`

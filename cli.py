@@ -66,7 +66,7 @@ def process_finances():
         console.print(f"[red]Brak katalogu {path}[/red]")
         return
         
-    files = [f for f in os.listdir(path) if f.casefold().endswith(('.jpg', '.png'))]
+    files = [f for f in os.listdir(path) if f.casefold().endswith(('.jpg', '.png', '.pdf'))]
     
     if not files:
         console.print("[bold red]Brak paragonów do przetworzenia![/bold red]")

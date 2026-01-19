@@ -1,0 +1,37 @@
+{
+  "MLEKO UHT 3.2 12,99": {
+    "name": "Mleko UHT 3.2%",
+    "category": "NABIAŁ",
+    "unit": "szt",
+    "confidence": 1.0,
+    "source": "fuzzy"
+  },
+  "MASLO EX 3,50": {
+    "name": "Masło Ekstra",
+    "category": "NABIAŁ",
+    "unit": "szt",
+    "confidence": 1.0,
+    "source": "fuzzy"
+  },
+  "BANANY LUZ 1,2 KG * 4,00 4,80": {
+    "name": "Banany",
+    "category": "OWOCE_WARZYWA",
+    "unit": "kg",
+    "confidence": 1.0,
+    "source": "fuzzy"
+  },
+  "REKLAMOWKA 0,50": {
+    "name": "Reklamówka",
+    "category": "INNE",
+    "unit": "szt",
+    "confidence": 1.0,
+    "source": "fuzzy"
+  },
+  "CHL. ZWYKLY 2,50": {
+    "name": "Chleb Zwykły",
+    "category": "SPOŻYWCZE",
+    "unit": "szt",
+    "confidence": 1.0,
+    "source": "fuzzy"
+  }
+}

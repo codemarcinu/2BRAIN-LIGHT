@@ -2,8 +2,10 @@ import os
 import time
 import shutil
 import json
+import io
 import psycopg2
 from google.cloud import vision
+from pdf2image import convert_from_path
 # import ollama
 from dotenv import load_dotenv
 from datetime import datetime
@@ -14,21 +16,44 @@ load_dotenv()
 INPUT_DIR = "./inputs/paragony"
 ARCHIVE_DIR = "./archive"
 
-def get_text_from_image(image_path):
-    """Google Vision API - OCR"""
-    try:
-        client = vision.ImageAnnotatorClient()
-        with open(image_path, "rb") as image_file:
-            content = image_file.read()
-        image = vision.Image(content=content)
-        response = client.text_detection(image=image)
-        texts = response.text_annotations
-        if texts:
-            return texts[0].description
-        return ""
-    except Exception as e:
-        print(f"⚠️ Błąd OCR: {e}")
-        return ""
+def get_text_from_file(file_path):
+    """Google Vision API - OCR (Images & PDFs)"""
+    ext = os.path.splitext(file_path)[1].lower()
+    
+    if ext == '.pdf':
+        try:
+            images = convert_from_path(file_path)
+            client = vision.ImageAnnotatorClient()
+            full_text = ""
+            for image in images:
+                img_byte_arr = io.BytesIO()
+                image.save(img_byte_arr, format='JPEG')
+                content = img_byte_arr.getvalue()
+                vision_image = vision.Image(content=content)
+                response = client.text_detection(image=vision_image)
+                if response.text_annotations:
+                    full_text += response.text_annotations[0].description + "\n"
+            return full_text
+        except Exception as e:
+            print(f"⚠️ Błąd OCR PDF: {e}")
+            return ""
+    else:
+        try:
+            client = vision.ImageAnnotatorClient()
+            with open(file_path, "rb") as image_file:
+                content = image_file.read()
+            image = vision.Image(content=content)
+            response = client.text_detection(image=image)
+            texts = response.text_annotations
+            if texts:
+                return texts[0].description
+            return ""
+        except Exception as e:
+            print(f"⚠️ Błąd OCR obrazu: {e}")
+            return ""
+
+# Alias for backward compatibility (tests and bot)
+get_text_from_image = get_text_from_file
 
 def parse_receipt_with_openai(ocr_text):
     """OpenAI (GPT-4o-mini) - Text to JSON Summary"""
@@ -88,7 +113,7 @@ def process_receipt_image(image_path, verbose=True):
     if verbose: print(f"⚡ Analiza: {os.path.basename(image_path)}")
     
     # 1. OCR
-    text = get_text_from_image(image_path)
+    text = get_text_from_file(image_path)
     if not text:
         return "⚠️ OCR nie odczytał tekstu."
         
@@ -107,7 +132,7 @@ def process_batch(verbose=False):
     if not os.path.exists(INPUT_DIR):
         os.makedirs(INPUT_DIR)
         
-    files = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    files = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.pdf'))]
     processed_count = 0
     
     for file in files:

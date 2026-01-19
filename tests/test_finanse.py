@@ -27,7 +27,7 @@ def test_get_text_from_image_no_text(mock_env):
         with patch('builtins.open', new_callable=MagicMock) as mock_open:
             # Mock file read to return bytes
             mock_open.return_value.__enter__.return_value.read.return_value = b"dummy_content"
-            text = finanse.get_text_from_image("dummy_path.jpg")
+            text = finanse.get_text_from_file("dummy_path.jpg")
             assert text == ""
 
 def test_get_text_from_image_success(mock_env):
@@ -40,7 +40,7 @@ def test_get_text_from_image_success(mock_env):
         with patch('builtins.open', new_callable=MagicMock) as mock_open:
             # Mock file read to return bytes
             mock_open.return_value.__enter__.return_value.read.return_value = b"dummy_content"
-            text = finanse.get_text_from_image("dummy_path.jpg")
+            text = finanse.get_text_from_file("dummy_path.jpg")
             assert text == "PARAGON 123"
 
 def test_parse_receipt_with_openai_success(mock_env):
@@ -61,7 +61,7 @@ def test_process_batch_no_files(mock_env):
 
 def test_process_batch_success(mock_env):
     with patch('os.listdir', return_value=['receipt.jpg']), \
-         patch('finanse.get_text_from_image', return_value="RAW CONTENT"), \
+         patch('finanse.get_text_from_file', return_value="RAW CONTENT"), \
          patch('finanse.parse_receipt_with_openai', return_value={'shop': 'Test', 'total': 50.0}), \
          patch('finanse.save_to_postgres') as mock_save, \
          patch('shutil.move') as mock_move:
