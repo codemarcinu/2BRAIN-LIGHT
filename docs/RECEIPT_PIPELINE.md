@@ -1,57 +1,41 @@
-# Receipt Processing Pipeline
+# Receipt Processing (Lite)
 
-System do inteligentnego przetwarzania paragonów, łączący tradycyjne metody (Cache, Fuzzy Matching) z modelami językowymi (LLM).
+System do automatycznego przetwarzania paragonów w wersji "Lite". Skoncentrowany na szybkości i integracji z bazą danych PostgreSQL.
 
-## Architektura
+## Przepływ pracy (Pipeline)
 
-System zorganizowany jest w architekturę potokową (Pipeline):
+1.  **Obraz**: Użytkownik przesyła zdjęcie (przez Telegram lub wrzuca do `inputs/paragony`).
+2.  **OCR (Vision API)**: System wysyła obraz do Google Cloud Vision. Uzyskuje pełny tekst paragonu.
+3.  **Parsowanie AI (OpenAI)**: 
+    *   Prompt systemowy (`prompts.py`) instruuje model GPT-4o-mini, jak wyciągnąć kluczowe dane.
+    *   Wyciągane pola: `shop` (sklep), `total` (kwota), `date` (data), `category` (lista zakupów / kategoria główna).
+    *   Wymuszany format: JSON.
+4.  **Baza Danych**: Wyniki są zapisywane w tabeli `receipts` w PostgreSQL.
+5.  **Archiwizacja**: Przetworzony plik obrazu jest przenoszony do folderu `archive/` z dodanym znacznikiem czasu.
 
-1.  **Input**: Tekst OCR z pliku Markdown (sekcja `## 📜 Oryginalny OCR`).
-2.  **Preprocessing**: Wykrycie sklepu (`detect_shop`) i czyszczenie tekstu przez dedykowanego agenta (np. `BiedronkaAgent`).
-3.  **Cache Lookup**: Sprawdzenie czy linia z paragonu była już wcześniej rozpoznana.
-4.  **Fuzzy Matching**: Dla nieznanych linii, próba dopasowania do bazy znanych produktów (`product_taxonomy.json`) używając biblioteki `rapidfuzz`.
-5.  **AI Fallback** (Opcjonalne): Jeśli pokrycie rozpoznanych produktów jest niskie (<30%), wysyłane jest zapytanie do LLM (Gemini/Ollama) o strukturyzację danych.
-6.  **Normalization**: Ujednolicenie nazw i kategorii (np. "MASLO EX" -> "Masło Ekstra" [NABIAŁ]).
-7.  **Output**: Aktualizacja pliku Markdown o tabelę produktów i blok JSON.
+## Kluczowe Pliki
 
-## Struktura Katalogów
+*   `finanse.py`: Główny moduł procesujący.
+*   `prompts.py`: Zawiera prompt `RECEIPT_SUMMARY_SYSTEM`.
+*   `db_setup.py`: Skrypt do inicjalizacji tabel w Postgresie.
 
-*   `core/pipelines/` - Główna logika potoku (`AsyncReceiptPipeline`).
-*   `core/tools/` - Narzędzia uruchomieniowe (`receipt_cleaner.py`).
-*   `utils/` - Biblioteki pomocnicze:
-    *   `receipt_cache.py`: Obsługa pamięci podręcznej.
-    *   `taxonomy.py`: Obsługa bazy produktów i wzorców.
-    *   `receipt_agents/`: Fabryka agentów dla poszczególnych sieci sklepów.
-*   `adapters/` - Adaptery do zewnętrznych API (Google Gemini, Ollama).
-*   `config/` - Pliki konfiguracyjne i dane statyczne (`product_taxonomy.json`).
+## Konfiguracja .env
 
-## Konfiguracja
+Wymagane zmienne dla tego modułu:
+```env
+# Google Vision
+GOOGLE_APPLICATION_CREDENTIALS="path/to/google_key.json"
 
-Plik konfiguracyjny: `config.py`
+# OpenAI
+OPENAI_API_KEY="sk-..."
 
-*   `RECEIPT_AI_PROVIDER`: `google` lub `ollama`.
-*   `GOOGLE_API_KEY`: Klucz API do Gemini (wymagany jeśli provider to google).
-*   `PRODUCT_TAXONOMY_PATH`: Ścieżka do pliku JSON z taksonomią.
-
-## Użycie
-
-Aby przetworzyć paragony oznaczone tagiem `#to-verify` w katalogu `inputs/paragony`:
-
-```bash
-python core/tools/receipt_cleaner.py
+# Database
+DB_HOST="psql01.mikr.us"
+DB_NAME="db_name"
+DB_USER="user"
+DB_PASS="password"
 ```
 
-## Rozszerzanie Taksonomii
+## Obsługiwane Typy Danych
 
-Aby dodać nowe produkty, edytuj `config/product_taxonomy.json`:
-
-```json
-{ 
-  "ocr": "NAZWA Z PARAGONU", 
-  "name": "Pełna Nazwa Produktu", 
-  "cat": "KATEGORIA", 
-  "unit": "szt" 
-}
-```
-
-Klucz `ocr` powinien być pisany wielkimi literami (UPPERCASE).
+Aplikacja dąży do uproszczenia finansów, dlatego zapisuje główne kategorie oraz sumy. Szczegółowe pozycje z paragonu są zapisywane jako tekst surowy (`raw_text`) w bazie, aby umożliwić późniejszą analizę, jeśli będzie potrzebna.

@@ -17,11 +17,15 @@ def mock_env(monkeypatch):
 
 def test_process_note_success(mock_env):
     with patch('builtins.open', new_callable=MagicMock) as mock_open, \
-         patch('wiedza.ollama.chat') as mock_chat, \
+         patch('openai.OpenAI') as MockOpenAI, \
          patch('os.path.exists', return_value=True):
         
         # Setup mocks
-        mock_chat.return_value = {'message': {'content': 'AI Summary'}}
+        mock_client = MockOpenAI.return_value
+        mock_completion = MagicMock()
+        mock_completion.choices[0].message.content = 'AI Summary'
+        mock_client.chat.completions.create.return_value = mock_completion
+        
         file_handle = mock_open.return_value.__enter__.return_value
         file_handle.read.return_value = "Original Content"
         

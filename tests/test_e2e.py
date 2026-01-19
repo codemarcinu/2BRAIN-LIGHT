@@ -45,7 +45,7 @@ def test_e2e_finance_flow_mocked():
     with patch('finanse.INPUT_DIR', TEST_INPUT_PARAGONY), \
          patch('finanse.ARCHIVE_DIR', TEST_ARCHIVE), \
          patch('finanse.get_text_from_image', return_value="OCR DATA"), \
-         patch('finanse.parse_receipt_with_ollama', return_value={"shop": "Test", "total": 100}), \
+         patch('finanse.parse_receipt_with_openai', return_value={"shop": "Test", "total": 100}), \
          patch('finanse.save_to_postgres', return_value=True) as mock_db:
          
         # 2. Run process
@@ -71,7 +71,12 @@ def test_e2e_knowledge_flow_mocked():
     with patch('wiedza.INBOX_DIR', TEST_INPUT_INBOX), \
          patch('wiedza.ARCHIVE_DIR', TEST_ARCHIVE), \
          patch('wiedza.VAULT_DIR', TEST_VAULT), \
-         patch('wiedza.ollama.chat', return_value={'message': {'content': 'Summary'}}):
+         patch('openai.OpenAI') as MockOpenAI:
+         
+        mock_client = MockOpenAI.return_value
+        mock_completion = MagicMock()
+        mock_completion.choices[0].message.content = 'Summary'
+        mock_client.chat.completions.create.return_value = mock_completion
          
         # 2. Run process
         count = wiedza.process_batch(verbose=False)

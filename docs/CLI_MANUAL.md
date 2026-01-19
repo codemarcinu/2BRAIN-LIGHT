@@ -1,63 +1,63 @@
 # 2brain_lite CLI Manual
 
-Welcome to the **Glorious CLI** manual for `2brain_lite`. This tool is designed to be your command center for personal finance and knowledge management, utilizing local AI and cloud databases.
+Witaj w instrukcji **Hacker Terminal** dla `2brain_lite`. Jest to centrum dowodzenia do zarządzania finansami i wiedzą, wykorzystujące chmurowe AI oraz bazy danych.
 
-## 🚀 Installation & Setup
+## 🚀 Instalacja i Konfiguracja
 
-1.  **Prerequisites**:
+1.  **Wymagania**:
     *   Python 3.10+
-    *   PostgreSQL database (e.g., on Mikr.us)
-    *   Google Cloud Vision API Key (JSON)
-    *   Ollama installed locally (with `qwen2.5-coder:14b` and `bielik` models)
+    *   Baza danych PostgreSQL (np. na Mikr.us)
+    *   Klucz Google Cloud Vision API (JSON)
+    *   Klucz OpenAI API
 
-2.  **Dependencies**:
+2.  **Zależności**:
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **Environment Variables**:
-    Ensure your `.env` file is populated with:
+3.  **Zmienne Środowiskowe (.env)**:
+    Upewnij się, że plik `.env` zawiera:
     *   `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT`
-    *   `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON key)
-    *   `OLLAMA_MODEL_LOGIC` (e.g., `qwen2.5-coder:14b`)
-    *   `OLLAMA_MODEL_POLISH` (e.g., `bielik`)
+    *   `OPENAI_API_KEY`
+    *   `TELEGRAM_TOKEN`
+    *   `ALLOWED_USER_ID` (twój ID na Telegramie)
 
-## 🎮 Usage Guide
+## 🎮 Instrukcja Użycia
 
-Run the CLI with:
+Uruchom CLI:
 ```bash
 python cli.py
 ```
 
-Navigate the menu using **Arrow Keys** and **Enter**.
+Nawigacja odbywa się za pomocą **Strzałek** i klawisza **Enter**.
 
-### 💰 Module: Przetwórz Paragony (Finance)
-*   **Input**: Place image files (`.jpg`, `.png`) in `inputs/paragony`.
-*   **Action**: Select "💰 Przetwórz Paragony".
-*   **Process**:
-    1.  **OCR**: Google Vision extracts text from the image.
-    2.  **AI Parsing**: Ollama converts raw text into structured JSON (Date, Shop, Amount, Category, Items).
-    3.  **Storage**: Finds are saved to your PostgreSQL database.
-    4.  **Archival**: Original images are moved to `archive/` with a timestamp.
+### 💰 Moduł: Przetwórz Paragony (Finance)
+*   **Wejście**: Umieść zdjęcia (`.jpg`, `.png`) w folderze `inputs/paragony`.
+*   **Akcja**: Wybierz "💰 Przetwórz Paragony".
+*   **Proces**:
+    1.  **OCR**: Google Vision wyciąga surowy tekst ze zdjęcia.
+    2.  **AI Parsing**: OpenAI (GPT-4o-mini) zamienia tekst na ustrukturyzowany JSON.
+    3.  **Zapis**: Dane trafiają do bazy PostgreSQL.
+    4.  **Archiwizacja**: Oryginalne zdjęcie trafia do `archive/`.
 
-### 🧠 Module: Przetwórz Inbox (Knowledge)
-*   **Input**: Place text files (`.txt`) in `inputs/inbox`.
-*   **Action**: Select "🧠 Przetwórz Inbox".
-*   **Process**:
-    1.  **AI Analysis**: Ollama summarizes the text, extracts key insights, and suggests tags.
-    2.  **Markdown Generation**: Creates a formatted `.md` file in your Obsidian Inbox (path defined in `wiedza.py`).
-    3.  **Archival**: Original `.txt` files are moved to `archive/`.
+### 🧠 Moduł: Przetwórz Inbox (Knowledge)
+*   **Wejście**: Umieść pliki tekstowe (`.txt`) lub PDF w `inputs/inbox`.
+*   **Akcja**: Wybierz "🧠 Przetwórz Inbox".
+*   **Proces**:
+    1.  **AI Analysis**: OpenAI tworzy podsumowanie, wnioski i tagi.
+    2.  **Markdown**: Generuje plik `.md` w folderze Obsidian (np. `./data/vault`).
+    3.  **Archiwizacja**: Pliki źródłowe trafiają do `archive/`.
 
-### 📊 Module: Raport Finansowy
-*   **Action**: Select "📊 Raport Finansowy".
-*   **Process**: Fetches the last 5 transactions and the total sum for the current month directly from the database and displays them in a rich table.
+### 📊 Moduł: Raport Finansowy
+*   **Akcja**: Wybierz "📊 Raport Finansowy".
+*   **Proces**: Pobiera ostatnie 5 transakcji bezpośrednio z bazy danych i wyświetla je w czytelnej tabeli.
 
-### 👀 Module: Watcher (Tryb ciągły)
-*   **Action**: Select "👀 Uruchom Watcher".
-*   **Process**: Runs in an infinite loop, monitoring both input folders every 5 seconds. Use `CTRL+C` to stop.
+### ⚙️ Moduł: Status Systemu
+*   **Akcja**: Wybierz "⚙️ Status Systemu".
+*   **Proces**: Sprawdza, czy procesy Bota i Watchera działają w tle (na podstawie PID).
 
-## 🔧 Troubleshooting
+## 🔧 Rozwiązywanie problemów
 
-*   **Database Error**: Ensure your VPN/Internet connection is active if using a remote DB. Check `.env` credentials.
-*   **Ollama Error**: Ensure Ollama is running (`ollama serve`) and the specified models are pulled (`ollama pull <model_name>`).
-*   **Google Vision Error**: Check if your service account key is valid and the path in `.env` is correct.
+*   **Błąd Bazy Danych**: Sprawdź połączenie z internetem oraz czy dane w `.env` są poprawne (Mikr.us wymaga czasem odświeżenia połączenia).
+*   **Błąd AI**: Upewnij się, że klucz `OPENAI_API_KEY` jest aktywny i masz środki na koncie.
+*   **Google Vision Error**: Sprawdź czy plik `google_key.json` (lub path w env) jest poprawny.

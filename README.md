@@ -11,10 +11,11 @@ Lekki, mobilny asystent osobisty. Bez zbędnego zarządzania magazynem. Skupiony
 
 ## Moduły
 
-*   **Finanse (`finanse.py`)**: Analizuje zdjęcia paragonów. Zapisuje sumę, sklep i kategorię do bazy SQL.
-*   **Wiedza (`wiedza.py`)**: Przetwarza luźne pliki tekstowe na notatki Markdown (Obsidian) z tagami AI.
-*   **Watcher (`watcher.py`)**: Nasłuchuje zmian na Google Drive i automatycznie zleca zadania.
-*   **Bot (`bot.py`)**: Interfejs użytkownika. Wysyłasz zdjęcie -> Finanse. Wysyłasz tekst -> Wiedza.
+*   **Finanse (`finanse.py`)**: Analizuje zdjęcia paragonów przy użyciu Google Vision OCR i OpenAI (GPT-4o-mini). Zapisuje dane do bazy PostgreSQL.
+*   **Wiedza (`wiedza.py`)**: Przetwarza pliki tekstowe/PDF na notatki Markdown z podsumowaniem AI i tagami.
+*   **Spiżarnia (`pantry.py`)**: Zarządza zapasami jedzenia. Pozwala dodawać produkty głosowo i śledzić ich zużycie (Human Feedback).
+*   **Watcher (`watcher.py`)**: Nasłuchuje zmian na dysku/folderach wejściowych i automatycznie wywołuje odpowiednie procesy.
+*   **Bot (`bot.py`)**: Główny interfejs Telegram. Obsługuje zdjęcia, tekst i wiadomości głosowe.
 
 ## Instalacja
 
@@ -22,23 +23,25 @@ Lekki, mobilny asystent osobisty. Bez zbędnego zarządzania magazynem. Skupiony
     ```bash
     pip install -r requirements.txt
     ```
-2.  Skonfiguruj `.env` (klucze API, ID folderu Drive, Token Telegrama).
-3.  Upewnij się, że masz `google_key.json` (Service Account) i `credentials.json` (User OAuth).
+2.  Skonfiguruj `.env` (klucze API dla OpenAI, Telegrama i dane bazy PostgreSQL).
+3.  Przygotuj `google_key.json` (Service Account) dla Google Vision OCR.
 
 ## Uruchomienie
 
-### 1. Watcher (W tle)
+### 1. Tryb Wszystko-w-jednym (Voice Brain)
+Najprostszy sposób na start:
 ```bash
-python watcher.py
+./start_voice_brain.sh
 ```
-Skanuje Google Drive co minutę.
+Uruchamia Watchera oraz Bota Telegrama w jednej sesji.
 
-### 2. Telegram Bot
+### 2. CLI (Narzędzia administratorskie)
 ```bash
-python bot.py
+python cli.py
 ```
-Twój główny interfejs.
 
 ## Dokumentacja
 
-👉 **[PODRECZNIK WDROŻENIA (Krok po Kroku)](docs_PODRECZNIK_WDROZENIA.md)** - Instrukcja dla osób nietechnicznych.
+👉 **[INSTRUKCJA CLI](docs/CLI_MANUAL.md)**
+👉 **[PRZETWARZANIE PARAGONÓW](docs/RECEIPT_PIPELINE.md)**
+👉 **[PRZEWODNIK WDROŻENIA](docs/DEPLOYMENT_GUIDE.md)**
