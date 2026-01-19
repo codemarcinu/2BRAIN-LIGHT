@@ -1,8 +1,8 @@
 import os
 import logging
 import asyncio
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 from dotenv import load_dotenv
 from openai import OpenAI
 import finanse
@@ -110,18 +110,86 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await check_auth(update): return
 
     photo_file = await update.message.photo[-1].get_file()
-    file_path = f"./inputs/paragony/telegram_{update.message.id}.jpg"
+    filename = f"tele_{update.message.id}.jpg"
+    file_path = f"./inputs/{filename}"
     
+    if not os.path.exists("./inputs"): os.makedirs("./inputs")
     await photo_file.download_to_drive(file_path)
-    await update.message.reply_text("⏳ Analizuję paragon...")
     
-    try:
-        # Wrapper to run sync function in threadpool
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, finanse.process_receipt_image, file_path, True)
-        await update.message.reply_text(result)
-    except Exception as e:
-        await update.message.reply_text(f"❌ Błąd: {e}")
+    keyboard = [
+        [
+            InlineKeyboardButton("💰 Paragon", callback_data=f"p:{filename}"),
+            InlineKeyboardButton("🧠 Wiedza", callback_data=f"w:{filename}"),
+        ],
+        [InlineKeyboardButton("❌ Anuluj", callback_data=f"c:{filename}")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("🖼️ Co chcesz zrobić z tym obrazem?", reply_markup=reply_markup)
+
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    data = query.data
+    if ":" not in data: return
+    action, filename = data.split(":", 1)
+    temp_path = f"./inputs/{filename}"
+    
+    if not os.path.exists(temp_path):
+        await query.edit_message_text("❌ Plik już nie istnieje lub został przetworzony.")
+        return
+
+    import shutil
+
+    if action == "p": # PARAGON
+        await query.edit_message_text("⏳ Analizuję paragon...")
+        final_path = f"./inputs/paragony/{filename}"
+        if not os.path.exists("./inputs/paragony"): os.makedirs("./inputs/paragony")
+        shutil.move(temp_path, final_path)
+        
+        try:
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(None, finanse.process_receipt_image, final_path, True)
+            await query.message.reply_text(result)
+        except Exception as e:
+            await query.message.reply_text(f"❌ Błąd finansów: {e}")
+            
+    elif action == "w": # WIEDZA
+        await query.edit_message_text("🧠 Przetwarzam jako wiedzę (OCR)...")
+        try:
+            # Wykonujemy OCR na obrazku, żeby mieć tekst do notatki
+            loop = asyncio.get_running_loop()
+            text = await loop.run_in_executor(None, finanse.get_text_from_file, temp_path)
+            
+            if not text:
+                await query.message.reply_text("⚠️ OCR nie wykrył tekstu na obrazku.")
+                if os.path.exists(temp_path): os.remove(temp_path)
+                return
+
+            # Tworzymy tymczasowy plik tekstowy dla modułu wiedza
+            txt_filename = filename.replace(".jpg", ".txt")
+            txt_path = f"./inputs/inbox/{txt_filename}"
+            if not os.path.exists("./inputs/inbox"): os.makedirs("./inputs/inbox")
+            
+            with open(txt_path, "w", encoding="utf-8") as f:
+                f.write(text)
+            
+            # Przetwarzamy jako notatkę
+            await loop.run_in_executor(None, wiedza.process_note, txt_path)
+            
+            if not os.path.exists("./archive"): os.makedirs("./archive")
+            shutil.move(txt_path, f"./archive/{txt_filename}")
+            
+            # Usuwamy oryginalny obrazek tymczasowy
+            if os.path.exists(temp_path): os.remove(temp_path)
+            
+            await query.message.reply_text("✅ Tekst z obrazka dodany do bazy wiedzy!")
+        except Exception as e:
+            await query.message.reply_text(f"❌ Błąd wiedzy: {e}")
+            
+    elif action == "c": # CANCEL
+        if os.path.exists(temp_path): os.remove(temp_path)
+        await query.edit_message_text("❌ Anulowano.")
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await check_auth(update): return
@@ -180,6 +248,7 @@ if __name__ == '__main__':
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_text))
     application.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    application.add_handler(CallbackQueryHandler(handle_callback))
     
     print("🤖 Bot (Voice Brain) wystartował!")
     application.run_polling()
