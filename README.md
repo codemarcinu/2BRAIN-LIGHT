@@ -1,24 +1,20 @@
-# 2brain_lite
+# 2brain_lite (Mobile First Pivot)
 
-Lekka wersja systemu "Drugi Mózg" do zarządzania finansami, spiżarnią i wiedzą osobistą.
+Lekki, mobilny asystent osobisty. Bez zbędnego zarządzania magazynem. Skupiony na szybkim przechwytywaniu (Capture) i automatycznej analizie.
 
-## Funkcjonalności
+## Filozofia
 
-*   **Spiżarnia (`pantry.py`)**: Zarządzanie stanem produktów, generowanie list zakupów.
-*   **Finanse (`finanse.py`)**: Śledzenie wydatków, integracja z paragonami.
-*   **Wiedza (`wiedza.py`)**: Zarządzanie notatkami w systemie Zettelkasten.
-*   **Przetwarzanie Paragonów (`core/pipelines`)**: Automatyczna normalizacja danych z paragonów przy użyciu Fuzzy Matching i AI.
-*   **CLI (`cli.py`)**: Interfejs wiersza poleceń do obsługi systemu.
+1.  **Mobile First**: Interakcja głównie przez **Telegrama**.
+2.  **Zero Friction**: Zdjęcia paragonów i luźne notatki głosowe/tekstowe.
+3.  **Automatyzacja**: `Watcher` sam pilnuje folderów Google Drive.
+4.  **High Level Finance**: Zamiast detali - ogólne kategorie i sumy.
 
-## Nowość: Receipt Processing Pipeline
+## Moduły
 
-System teraz zawiera zaawansowany moduł przetwarzania paragonów, który:
-1.  Wykrywa sklep i datę zakupu.
-2.  Normalizuje nazwy produktów na podstawie bazy `product_taxonomy.json`.
-3.  Uczy się nowych produktów (Cache).
-4.  Wykorzystuje AI do analizy trudnych przypadków.
-
-Dokumentacja techniczna potoku: [docs/RECEIPT_PIPELINE.md](docs/RECEIPT_PIPELINE.md).
+*   **Finanse (`finanse.py`)**: Analizuje zdjęcia paragonów. Zapisuje sumę, sklep i kategorię do bazy SQL.
+*   **Wiedza (`wiedza.py`)**: Przetwarza luźne pliki tekstowe na notatki Markdown (Obsidian) z tagami AI.
+*   **Watcher (`watcher.py`)**: Nasłuchuje zmian na Google Drive i automatycznie zleca zadania.
+*   **Bot (`bot.py`)**: Interfejs użytkownika. Wysyłasz zdjęcie -> Finanse. Wysyłasz tekst -> Wiedza.
 
 ## Instalacja
 
@@ -26,14 +22,23 @@ Dokumentacja techniczna potoku: [docs/RECEIPT_PIPELINE.md](docs/RECEIPT_PIPELINE
     ```bash
     pip install -r requirements.txt
     ```
-2.  Skonfiguruj `.env` (skopiuj z `.env.example` lub stwórz nowy):
-    ```env
-    GOOGLE_API_KEY=twoj_klucz
-    RECEIPT_AI_PROVIDER=google
-    ```
+2.  Skonfiguruj `.env` (klucze API, ID folderu Drive, Token Telegrama).
+3.  Upewnij się, że masz `google_key.json` (Service Account) i `credentials.json` (User OAuth).
 
-## Uruchomienie CLI
+## Uruchomienie
 
+### 1. Watcher (W tle)
 ```bash
-python cli.py
+python watcher.py
 ```
+Skanuje Google Drive co minutę.
+
+### 2. Telegram Bot
+```bash
+python bot.py
+```
+Twój główny interfejs.
+
+## Dokumentacja
+
+👉 **[PODRECZNIK WDROŻENIA (Krok po Kroku)](docs_PODRECZNIK_WDROZENIA.md)** - Instrukcja dla osób nietechnicznych.

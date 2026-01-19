@@ -1,13 +1,13 @@
 import os
-import pantry
 import time
 import shutil
 import json
 import psycopg2
 from google.cloud import vision
-import ollama
+# import ollama
 from dotenv import load_dotenv
 from datetime import datetime
+from prompts import RECEIPT_SUMMARY_SYSTEM
 
 load_dotenv()
 
@@ -16,114 +16,119 @@ ARCHIVE_DIR = "./archive"
 
 def get_text_from_image(image_path):
     """Google Vision API - OCR"""
-    client = vision.ImageAnnotatorClient()
-    with open(image_path, "rb") as image_file:
-        content = image_file.read()
-    image = vision.Image(content=content)
-    response = client.text_detection(image=image)
-    texts = response.text_annotations
-    if texts:
-        return texts[0].description
-    return ""
+    try:
+        client = vision.ImageAnnotatorClient()
+        with open(image_path, "rb") as image_file:
+            content = image_file.read()
+        image = vision.Image(content=content)
+        response = client.text_detection(image=image)
+        texts = response.text_annotations
+        if texts:
+            return texts[0].description
+        return ""
+    except Exception as e:
+        print(f"⚠️ Błąd OCR: {e}")
+        return ""
 
-def parse_receipt_with_ollama(ocr_text):
-    """Ollama (Qwen) - Text to JSON"""
-    prompt = f"""
-    Masz poniżej treść paragonu z OCR. Wyciągnij z niego dane w formacie JSON.
-    Pola: date (YYYY-MM-DD), shop_name, total_amount (jako float), category (Jedzenie, Chemia, Elektronika, Inne), 
-    items (lista produktów, gdzie każdy element to obiekt: {"name": "Nazwa", "price": 10.50, "quantity": 1, "total": 10.50}).
+def parse_receipt_with_openai(ocr_text):
+    """OpenAI (GPT-4o-mini) - Text to JSON Summary"""
+    from openai import OpenAI
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
-    TREŚĆ PARAGONU:
-    {ocr_text}
-    
-    Zwróć TYLKO czysty JSON, bez Markdowna.
-    """
-    
-    response = ollama.chat(model=os.getenv("OLLAMA_MODEL_LOGIC"), messages=[
-        {'role': 'user', 'content': prompt},
-    ])
+    response = client.chat.completions.create(
+        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        messages=[
+            {'role': 'system', 'content': RECEIPT_SUMMARY_SYSTEM},
+            {'role': 'user', 'content': f"PARAGON:\n{ocr_text}"},
+        ],
+        response_format={"type": "json_object"}
+    )
     
     try:
-        clean_json = response['message']['content'].strip()
-        # Czasem modele dodają ```json na początku, usuwamy to
-        if clean_json.startswith("```"):
-            clean_json = clean_json.split("\n", 1)[1].rsplit("\n", 1)[0]
+        clean_json = response.choices[0].message.content
         return json.loads(clean_json)
     except Exception as e:
-        print(f"❌ Błąd parsowania JSON przez Ollama: {e}")
+        print(f"❌ Błąd parsowania AI (OpenAI): {e}")
         return None
 
 def save_to_postgres(data, raw_text):
-    conn = psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        port=os.getenv("DB_PORT")
-    )
-    cur = conn.cursor()
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST", "psql01.mikr.us"),
+            database=os.getenv("DB_NAME", "db_joanna114"),
+            user=os.getenv("DB_USER", "joanna114"),
+            password=os.getenv("DB_PASS"),
+            port=os.getenv("DB_PORT", "5432")
+        )
+        cur = conn.cursor()
+        
+        # Schema expects items_json, so we pass empty list to satisfy it
+        # The prompt returns keys: shop, date, total, category, currency
+        
+        cur.execute("""
+            INSERT INTO receipts (date, shop_name, total_amount, category, items_json, raw_text)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            data.get('date'),
+            data.get('shop', 'Nieznany'),
+            data.get('total', 0.0),
+            data.get('category', 'Inne'),
+            json.dumps([]), # No detailed items anymore
+            raw_text
+        ))
+        
+        conn.commit()
+        conn.close()
+        print(f"💰 [FINANSE] Zapisano: {data.get('shop')} | {data.get('total')} PLN | {data.get('category')}")
+    except Exception as e:
+        print(f"❌ Błąd zapisu do DB: {e}")
+
+def process_receipt_image(image_path, verbose=True):
+    """Funkcja dostępna dla Bota i CLI"""
+    if verbose: print(f"⚡ Analiza: {os.path.basename(image_path)}")
     
-    cur.execute("""
-        INSERT INTO receipts (date, shop_name, total_amount, category, items_json, raw_text)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        data.get('date'),
-        data.get('shop_name'),
-        data.get('total_amount'),
-        data.get('category'),
-        json.dumps(data.get('items')),
-        raw_text
-    ))
+    # 1. OCR
+    text = get_text_from_image(image_path)
+    if not text:
+        return "⚠️ OCR nie odczytał tekstu."
+        
+    # 2. AI Summary
+    data = parse_receipt_with_openai(text)
+    if not data:
+        return "⚠️ AI nie zrozumiało paragonu."
     
-    conn.commit()
-    conn.close()
-    print(f"💰 Zapisano w bazie: {data.get('shop_name')} na kwotę {data.get('total_amount')}")
+    # 3. Save
+    save_to_postgres(data, text)
+    
+    return f"✅ Dodano: {data.get('shop')} ({data.get('total')} PLN) [{data.get('category')}]"
 
 def process_batch(verbose=False):
-    """Przetwarza wszystkie pliki w folderze jednorazowo"""
+    """Batch processing folderu"""
+    if not os.path.exists(INPUT_DIR):
+        os.makedirs(INPUT_DIR)
+        
     files = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     processed_count = 0
     
-    if not files:
-        if verbose: print("📭 Brak nowych paragonów.")
-        return 0
-
     for file in files:
         full_path = os.path.join(INPUT_DIR, file)
-        if verbose: print(f"⚡ Przetwarzam: {file}")
+        result_msg = process_receipt_image(full_path, verbose)
+        if verbose: print(result_msg)
         
-        # 1. OCR
-        text = get_text_from_image(full_path)
-        if not text:
-            if verbose: print("⚠️ Nie wykryto tekstu.")
-            continue
-            
-        # 2. AI Parse
-        data = parse_receipt_with_ollama(text)
-        
-        # 3. Save & Archive
-        if data:
-            save_to_postgres(data, text)
-            
-            # ---> INTEGRACJA PANTRY
-            if 'items' in data and data['items']:
-                 print(f"🥦 Przekazuję {len(data['items'])} produktów do modułu Smart Pantry...")
-                 count = pantry.add_items_from_receipt(data['items'], data['date'])
-                 print(f"✅ Dodano {count} produktów do spiżarni.")
-            # <--- KONIEC INTEGRACJI
-            
+        if "✅" in result_msg:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            if not os.path.exists(ARCHIVE_DIR):
+                os.makedirs(ARCHIVE_DIR)
             shutil.move(full_path, os.path.join(ARCHIVE_DIR, f"{timestamp}_{file}"))
             processed_count += 1
             
     return processed_count
 
 def main_loop():
-    """Stara pętla do watchera"""
-    print("👀 Obserwuję folder z paragonami...")
+    print("👀 [FINANSE] Obserwuję folder inputs/paragony...")
     while True:
         process_batch(verbose=True)
-        time.sleep(5)
+        time.sleep(10)
 
 if __name__ == "__main__":
     main_loop()

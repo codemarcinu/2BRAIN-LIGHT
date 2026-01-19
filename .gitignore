@@ -13,3 +13,7 @@ archive/*
 receipt_cache.json
 google_key.json
 credentials.json
+token.json
+history.json
+*.log
+voice_*.ogg

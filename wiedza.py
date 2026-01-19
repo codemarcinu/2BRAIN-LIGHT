@@ -1,13 +1,13 @@
 import os
 import shutil
-import ollama
+# import ollama
 from dotenv import load_dotenv
 from datetime import datetime
 
 load_dotenv()
 
 INBOX_DIR = "./inputs/inbox"
-VAULT_DIR = "C:/Sciezka/Do/Twojego/Obsidian/Inbox" # <-- ZMIEŃ NA SWOJĄ
+VAULT_DIR = os.getenv("VAULT_PATH", "./outputs/vault")
 ARCHIVE_DIR = "./archive"
 
 def process_note(file_path):
@@ -24,12 +24,18 @@ def process_note(file_path):
     {content}
     """
     
-    # Używamy Bielika dla lepszej polszczyzny lub Qwena dla szybkości
-    response = ollama.chat(model=os.getenv("OLLAMA_MODEL_POLISH"), messages=[
-        {'role': 'user', 'content': prompt},
-    ])
+    # Używamy OpenAI (GPT-4o-mini) zamiast Ollamy
+    from openai import OpenAI
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
-    ai_output = response['message']['content']
+    response = client.chat.completions.create(
+        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        messages=[
+            {'role': 'user', 'content': prompt},
+        ]
+    )
+    
+    ai_output = response.choices[0].message.content
     
     # Tworzenie pliku .md
     filename = os.path.basename(file_path).replace('.txt', '.md')

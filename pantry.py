@@ -2,169 +2,133 @@ import os
 import json
 import psycopg2
 from openai import OpenAI
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
-import prompts  # Importujemy nasze prompty
 
 load_dotenv()
 
-# Klient OpenAI (używamy gpt-4o-mini bo jest tani i świetny w JSON)
-# Uwaga: Upewnij się, że OPENAI_API_KEY jest ustawiony w .env
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-
-def get_db():
+def get_db_connection():
     return psycopg2.connect(
-        host=os.getenv("DB_HOST"), database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"), password=os.getenv("DB_PASS"), port=os.getenv("DB_PORT")
+        host=os.getenv("DB_HOST", "psql01.mikr.us"),
+        database=os.getenv("DB_NAME", "db_joanna114"),
+        user=os.getenv("DB_USER", "joanna114"),
+        password=os.getenv("DB_PASS"),
+        port=os.getenv("DB_PORT", "5432")
     )
 
-# --- 1. IMPORTOWANIE (Podczas skanowania paragonu) ---
-
-def add_items_from_receipt(items_list, purchase_date_str):
-    """Analizuje listę z paragonu i dodaje jedzenie do bazy"""
-    print("🥦 AI analizuje trwałość produktów...")
+def add_items_from_text(user_text):
+    """
+    Dodaje produkty na podstawie luźnego tekstu (np. z Voice Message).
+    """
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
-    user_content = f"DATA ZAKUPU: {purchase_date_str}\nLISTA POZYCJI: {json.dumps(items_list)}"
-    
-    try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": prompts.ESTIMATE_EXPIRY_SYSTEM},
-                {"role": "user", "content": user_content}
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        result = json.loads(response.choices[0].message.content)
-        products = result.get("products", []) # Zakładamy że AI zwróci klucz "products"
-        
-        conn = get_db()
-        cur = conn.cursor()
-        purchase_date = datetime.strptime(purchase_date_str, "%Y-%m-%d").date()
-        
-        added_count = 0
-        for p in products:
-            expiry = purchase_date + timedelta(days=p.get('days', 7))
-            cur.execute("""
-                INSERT INTO pantry (product_name, category, purchase_date, estimated_expiry)
-                VALUES (%s, %s, %s, %s)
-            """, (p['name'], p.get('category', 'Inne'), purchase_date, expiry))
-            added_count += 1
-            
-        conn.commit()
-        conn.close()
-        return added_count
-
-    except Exception as e:
-        print(f"❌ Błąd OpenAI przy imporcie: {type(e).__name__}: {e}")
-        import traceback
-        traceback.print_exc()
-        return 0
-
-# --- 2. POBIERANIE DANYCH ---
-
-def get_expired_candidates():
-    """Zwraca listę produktów przeterminowanych do weryfikacji"""
-    conn = get_db()
-    cur = conn.cursor()
-    # Pobieramy wszystko co ma datę ważności <= DZISIAJ
-    cur.execute("""
-        SELECT id, product_name, estimated_expiry, category
-        FROM pantry 
-        WHERE status = 'IN_STOCK' AND estimated_expiry <= CURRENT_DATE
-        ORDER BY estimated_expiry ASC
-    """)
-    rows = cur.fetchall()
-    conn.close()
-    return [{"id": r[0], "name": r[1], "expiry": str(r[2]), "cat": r[3]} for r in rows]
-
-def get_dashboard_stats():
-    """Zwraca co mamy w lodówce"""
-    conn = get_db()
-    cur = conn.cursor()
-    # Psujące się w ciągu 4 dni
-    cur.execute("SELECT product_name, estimated_expiry FROM pantry WHERE status='IN_STOCK' AND estimated_expiry <= CURRENT_DATE + 4 ORDER BY estimated_expiry")
-    expiring = cur.fetchall()
-    # Cała reszta
-    cur.execute("SELECT COUNT(*) FROM pantry WHERE status='IN_STOCK'")
-    total_count = cur.fetchone()[0]
-    conn.close()
-    return expiring, total_count
-
-# --- 3. CLEANUP (MAN IN THE LOOP) ---
-
-def process_human_feedback(candidates, user_input):
-    """Kluczowa funkcja: User mówi co zjadł, AI aktualizuje bazę"""
-    
-    # Przygotowanie danych dla AI
-    candidates_json = json.dumps([{k: v for k, v in c.items()} for c in candidates], ensure_ascii=False)
-    
-    try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": prompts.CLEANUP_SYSTEM},
-                {"role": "user", "content": f"LISTA: {candidates_json}\nKOMENTARZ: {user_input}"}
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        actions = json.loads(response.choices[0].message.content).get("updates", [])
-        
-        conn = get_db()
-        cur = conn.cursor()
-        
-        stats = {"consumed": 0, "trashed": 0, "extended": 0}
-        
-        for action in actions:
-            p_id = action['id']
-            status = action['status']
-            
-            if status in ['CONSUMED', 'TRASHED']:
-                cur.execute("UPDATE pantry SET status=%s WHERE id=%s", (status, p_id))
-                stats[status.lower()] += 1
-                
-            elif status == 'EXTEND':
-                days = action.get('extend_days', 3)
-                # Ustawiamy nową datę ważności = DZIŚ + days
-                cur.execute("UPDATE pantry SET estimated_expiry = CURRENT_DATE + INTERVAL '%s days' WHERE id=%s", (days, p_id))
-                stats["extended"] += 1
-                
-        conn.commit()
-        conn.close()
-        return stats
-
-    except Exception as e:
-        print(f"❌ Błąd HITL: {e}")
-        return None
-
-# --- 4. OBIAD (RAG-LITE) ---
-
-def suggest_recipe():
-    conn = get_db()
-    cur = conn.cursor()
-    
-    # 1. Pobierz pilne
-    cur.execute("SELECT product_name FROM pantry WHERE status='IN_STOCK' AND estimated_expiry <= CURRENT_DATE + 3")
-    urgent = [r[0] for r in cur.fetchall()]
-    
-    # 2. Pobierz resztę (jako tło)
-    cur.execute("SELECT product_name FROM pantry WHERE status='IN_STOCK' LIMIT 30")
-    others = [r[0] for r in cur.fetchall()]
-    conn.close()
-    
-    if not urgent and not others:
-        return "Lodówka pusta. Zamów pizzę."
-
-    user_msg = f"PILNE SKŁADNIKI: {', '.join(urgent)}\nPOZOSTAŁE: {', '.join(others)}"
+    prompt = f"""
+    Użytkownik powiedział: "{user_text}".
+    Wyciągnij z tego listę zakupionych/przyniesionych produktów spożywczych.
+    Oszacuj ich datę ważności (days) i kategorię (Pieczywo, Nabiał, Warzywa, Mięso, Inne).
+    Zwróć JSON: {{"products": [{{"name": "Chleb", "category": "Pieczywo", "days": 3}}]}}
+    Jeśli nic nie znaleziono, zwróć pustą listę.
+    """
     
     response = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": prompts.DINNER_SYSTEM},
-            {"role": "user", "content": user_msg}
-        ]
+        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        messages=[{'role': 'user', 'content': prompt}],
+        response_format={"type": "json_object"}
     )
-    return response.choices[0].message.content
+    
+    try:
+        content = response.choices[0].message.content
+        data = json.loads(content)
+        products = data.get("products", [])
+    except Exception as e:
+        print(f"❌ Pantry AI Error: {e}")
+        return 0
+        
+    if not products:
+        return 0
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    count = 0
+    for p in products:
+        cur.execute("""
+            INSERT INTO pantry (product_name, category, purchase_date, estimated_expiry, status)
+            VALUES (%s, %s, CURRENT_DATE, CURRENT_DATE + interval '%s days', 'IN_STOCK')
+        """, (p['name'], p.get('category', 'Inne'), p.get('days', 7)))
+        count += 1
+        
+    conn.commit()
+    conn.close()
+    return count
+
+def get_all_stock():
+    """Pobiera listę nazw produktów w lodówce"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT product_name FROM pantry WHERE status = 'IN_STOCK'")
+    rows = cur.fetchall()
+    conn.close()
+    return [r[0] for r in rows]
+
+def process_human_feedback(candidates, user_comment):
+    """
+    Analizuje luźny komentarz (np. 'zjadłem ser') w kontekście produktów w lodówce.
+    """
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    # candidates to lista słowników, ale tutaj uprościmy przekazując same nazwy
+    # w realnym systemie ID są konieczne, ale Voice jest 'fuzzy'.
+    
+    prompt = f"""
+    Twoim celem jest aktualizacja statusu produktów.
+    Mamy w lodówce: {json.dumps(candidates, ensure_ascii=False)}
+    Użytkownik powiedział: "{user_comment}"
+    
+    Zwróć JSON z listą akcji:
+    {{"actions": [
+       {{"name": "Ser", "action": "CONSUMED"}}, 
+       {{"name": "Szynka", "action": "TRASHED"}}
+    ]}}
+    Użyj fuzzy matchingu. Jeśli nie ma pewności, pomiń.
+    """
+    
+    response = client.chat.completions.create(
+        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        messages=[{'role': 'user', 'content': prompt}],
+        response_format={"type": "json_object"}
+    )
+    
+    stats = {"consumed": 0, "trashed": 0, "extended": 0}
+    
+    try:
+        data = json.loads(response.choices[0].message.content)
+        actions = data.get("actions", [])
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        for action in actions:
+            # Tu jest uproszczenie: bierzemy pierwszy pasujący produkt. 
+            # W SQL 'LIKE' lub trigram search byłby lepszy.
+            cur.execute("""
+                UPDATE pantry 
+                SET status = %s 
+                WHERE product_name ILIKE %s AND status = 'IN_STOCK'
+            """, (action['action'], f"%{action['name']}%"))
+            
+            if cur.rowcount > 0:
+                key = action['action'].lower()
+                if key in stats: 
+                    stats[key] += cur.rowcount
+                elif key == 'trashed': # mapowanie jeśli inne
+                     stats['trashed'] += cur.rowcount
+                conn.commit() # commit per action for safety? No, outside loop better but here we verify rowcount
+                
+        conn.commit()
+        conn.close()
+        
+    except Exception as e:
+        print(f"❌ Pantry Update Error: {e}")
+        return None
+        
+    return stats
