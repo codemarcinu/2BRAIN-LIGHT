@@ -1,0 +1,13 @@
+#!/bin/bash
+# Skrypt do uruchamiania CLI 2Brain Lite wewnątrz venv
+
+# Pobierz ścieżkę do katalogu, w którym znajduje się ten skrypt
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Uruchom cli.py używając interpretera z venv
+if [ -f "$DIR/venv/bin/python3" ]; then
+    "$DIR/venv/bin/python3" "$DIR/cli.py"
+else
+    # Fallback jeśli venv nie istnieje
+    python3 "$DIR/cli.py"
+fi
