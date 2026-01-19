@@ -39,13 +39,17 @@ def show_status():
     
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
+            # Skip the screen manager process itself
+            if proc.info['name'] == 'SCREEN':
+                continue
+                
             cmdline = proc.info.get('cmdline', [])
             if cmdline:
                 full_cmd = " ".join(cmdline)
-                if "bot.py" in full_cmd:
+                if "bot.py" in full_cmd and not found_bot:
                     table.add_row("🤖 Telegram Bot", str(proc.info['pid']), "RUNNING")
                     found_bot = True
-                if "watcher.py" in full_cmd:
+                if "watcher.py" in full_cmd and not found_watcher:
                     table.add_row("👀 Watcher", str(proc.info['pid']), "RUNNING")
                     found_watcher = True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
