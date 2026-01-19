@@ -25,4 +25,4 @@ class ProjectConfig:
     OBSIDIAN_VAULT = Path(os.getenv("OBSIDIAN_VAULT_PATH", INPUTS_DIR)) # Fallback to inputs if not set
 
     # Cache
-    CACHE_FILE = BASE_DIR / "receipt_cache.json"
+    CACHE_FILE = BASE_DIR / "data" / "receipt_cache.json"

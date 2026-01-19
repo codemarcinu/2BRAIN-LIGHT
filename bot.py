@@ -25,8 +25,15 @@ logging.basicConfig(
 )
 
 async def check_auth(update: Update):
-    if update.effective_user.id != ALLOWED_USER_ID:
-        await update.message.reply_text(f"⛔ Brak dostępu. Twój ID: {update.effective_user.id}")
+    user_id = update.effective_user.id
+    if ALLOWED_USER_ID == 0:
+        logging.warning(f"⚠️ TELEGRAM_ALLOWED_USER_ID is not set (default 0). Blocking access for {user_id}")
+        await update.message.reply_text("⛔ Bot nie jest skonfigurowany (Brak ALLOWED_USER_ID).")
+        return False
+        
+    if user_id != ALLOWED_USER_ID:
+        logging.warning(f"⛔ Nieautoryzowany dostęp: ID={user_id}, Username={update.effective_user.username}")
+        await update.message.reply_text(f"⛔ Brak dostępu. Twój ID: {user_id}")
         return False
     return True
 

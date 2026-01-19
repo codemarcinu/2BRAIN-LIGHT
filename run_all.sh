@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ ! -f ".env" ]; then
+    echo "❌ BŁĄD: Brak pliku .env. Skopiuj .env.example i uzupełnij klucze!"
+    exit 1
+fi
+
 # Zabij istniejące sesje jeśli istnieją
 screen -S brainbot -X quit 2>/dev/null
 screen -S brainwatcher -X quit 2>/dev/null

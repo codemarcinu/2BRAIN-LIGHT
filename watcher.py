@@ -61,7 +61,8 @@ def download_file(service, file_id, file_name):
     if not os.path.exists(INPUT_DIR):
         os.makedirs(INPUT_DIR)
         
-    local_path = os.path.join(INPUT_DIR, file_name)
+    safe_name = os.path.basename(file_name)
+    local_path = os.path.join(INPUT_DIR, safe_name)
     with open(local_path, "wb") as f:
         f.write(fh.getbuffer())
     return local_path
