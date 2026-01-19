@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+.pytest_cache/
+inputs/paragony/*.md
+!inputs/paragony/test_receipt.md
+inputs/inbox/*
+archive/*
+receipt_cache.json
+google_key.json
+credentials.json

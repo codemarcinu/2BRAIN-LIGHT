@@ -1,0 +1,304 @@
+{
+    "mappings": [
+        {
+            "ocr": "REKLAMOWKA",
+            "name": "Reklamówka",
+            "cat": "INNE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "TORBA PAPIER",
+            "name": "Torba Papierowa",
+            "cat": "INNE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "CHL. ZWYKLY",
+            "name": "Chleb Zwykły",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "CHLEB BALTON",
+            "name": "Chleb Baltonowski",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "KAJZERKA",
+            "name": "Bułka Kajzerka",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "BULKA GRAH",
+            "name": "Bułka Grahamka",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "BAGIETKA CZOSN",
+            "name": "Bagietka Czosnkowa",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "MLEKO UHT 3.2",
+            "name": "Mleko UHT 3.2%",
+            "cat": "NABIAŁ",
+            "unit": "szt"
+        },
+        {
+            "ocr": "MLEKO SWIEZE",
+            "name": "Mleko Świeże",
+            "cat": "NABIAŁ",
+            "unit": "szt"
+        },
+        {
+            "ocr": "MASLO EX",
+            "name": "Masło Ekstra",
+            "cat": "NABIAŁ",
+            "unit": "szt"
+        },
+        {
+            "ocr": "MASLO OSELKA",
+            "name": "Masło Osełka",
+            "cat": "NABIAŁ",
+            "unit": "szt"
+        },
+        {
+            "ocr": "SER GOUDA",
+            "name": "Ser Żółty Gouda",
+            "cat": "NABIAŁ",
+            "unit": "kg"
+        },
+        {
+            "ocr": "SER EDAMSKI",
+            "name": "Ser Żółty Edamski",
+            "cat": "NABIAŁ",
+            "unit": "kg"
+        },
+        {
+            "ocr": "SER MOZZARELLA",
+            "name": "Mozzarella",
+            "cat": "NABIAŁ",
+            "unit": "szt"
+        },
+        {
+            "ocr": "JOG. NAT.",
+            "name": "Jogurt Naturalny",
+            "cat": "NABIAŁ",
+            "unit": "szt"
+        },
+        {
+            "ocr": "SMIETANA 18",
+            "name": "Śmietana 18%",
+            "cat": "NABIAŁ",
+            "unit": "szt"
+        },
+        {
+            "ocr": "JAJA WOLNY WYB",
+            "name": "Jaja Wolny Wybieg (10szt)",
+            "cat": "NABIAŁ",
+            "unit": "op"
+        },
+        {
+            "ocr": "BANANY LUZ",
+            "name": "Banany",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "CYTRYNA LUZ",
+            "name": "Cytryna",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "ZIEMNIAKI WCZ",
+            "name": "Ziemniaki Wczesne",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "POMIDOR MALIN",
+            "name": "Pomidor Malinowy",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "OGOREK GRUNT",
+            "name": "Ogórek Gruntowy",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "MARCHEW LUZ",
+            "name": "Marchew",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "CEBULA ZOLTA",
+            "name": "Cebula Żółta",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "PAPRYKA CZERW",
+            "name": "Papryka Czerwona",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "PIECZARKI LUZ",
+            "name": "Pieczarki",
+            "cat": "OWOCE_WARZYWA",
+            "unit": "kg"
+        },
+        {
+            "ocr": "FILET Z P. KURCZ",
+            "name": "Filet z Piersi Kurczaka",
+            "cat": "MIĘSO",
+            "unit": "kg"
+        },
+        {
+            "ocr": "FILET Z INDYKA",
+            "name": "Filet z Indyka",
+            "cat": "MIĘSO",
+            "unit": "kg"
+        },
+        {
+            "ocr": "SCHAB B/K",
+            "name": "Schab Bez Kości",
+            "cat": "MIĘSO",
+            "unit": "kg"
+        },
+        {
+            "ocr": "MIESO MIELONE WIEPRZ",
+            "name": "Mięso Mielone Wieprzowe",
+            "cat": "MIĘSO",
+            "unit": "op"
+        },
+        {
+            "ocr": "PAROWKI BERLIN",
+            "name": "Parówki Berlinki",
+            "cat": "MIĘSO",
+            "unit": "op"
+        },
+        {
+            "ocr": "KABANOSY",
+            "name": "Kabanosy",
+            "cat": "MIĘSO",
+            "unit": "op"
+        },
+        {
+            "ocr": "WODA ZRODLANA",
+            "name": "Woda Źródlana 1.5L",
+            "cat": "NAPOJE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "WODA GAZ.",
+            "name": "Woda Gazowana 1.5L",
+            "cat": "NAPOJE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "SOK POMARANCZ",
+            "name": "Sok Pomarańczowy 1L",
+            "cat": "NAPOJE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "COCA COLA",
+            "name": "Coca Cola",
+            "cat": "NAPOJE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "PIWO TYSKIE",
+            "name": "Piwo Tyskie 0.5L",
+            "cat": "ALKOHOL",
+            "unit": "szt"
+        },
+        {
+            "ocr": "PIWO ZYWIEC",
+            "name": "Piwo Żywiec 0.5L",
+            "cat": "ALKOHOL",
+            "unit": "szt"
+        },
+        {
+            "ocr": "CUKIER KRYSZTAL",
+            "name": "Cukier Biały 1kg",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "MAKA PSZENNA",
+            "name": "Mąka Pszenna 1kg",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "OLEJ KUJAWSKI",
+            "name": "Olej Kujawski 1L",
+            "cat": "SPOŻYWCZE",
+            "unit": "szt"
+        },
+        {
+            "ocr": "MAKARON SPAG",
+            "name": "Makaron Spaghetti",
+            "cat": "SPOŻYWCZE",
+            "unit": "op"
+        },
+        {
+            "ocr": "RYZ BIALY",
+            "name": "Ryż Biały 4x100g",
+            "cat": "SPOŻYWCZE",
+            "unit": "op"
+        },
+        {
+            "ocr": "KAWA MIELONA",
+            "name": "Kawa Mielona",
+            "cat": "SPOŻYWCZE",
+            "unit": "op"
+        },
+        {
+            "ocr": "HERBATA CZARNA",
+            "name": "Herbata Czarna",
+            "cat": "SPOŻYWCZE",
+            "unit": "op"
+        },
+        {
+            "ocr": "PAPIER TOALET",
+            "name": "Papier Toaletowy",
+            "cat": "CHEMIA",
+            "unit": "op"
+        },
+        {
+            "ocr": "RECZNIK PAPIER",
+            "name": "Ręcznik Papierowy",
+            "cat": "CHEMIA",
+            "unit": "op"
+        },
+        {
+            "ocr": "PLYN DO NACZYN",
+            "name": "Płyn do Naczyń",
+            "cat": "CHEMIA",
+            "unit": "szt"
+        },
+        {
+            "ocr": "KAPSULKI PRANIA",
+            "name": "Kapsułki do Prania",
+            "cat": "CHEMIA",
+            "unit": "op"
+        },
+        {
+            "ocr": "WORKI NA SMIECI",
+            "name": "Worki na Śmieci",
+            "cat": "CHEMIA",
+            "unit": "op"
+        }
+    ]
+}

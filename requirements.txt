@@ -1,0 +1,12 @@
+google-cloud-vision
+ollama
+psycopg2-binary
+python-dotenv
+Pillow
+rich
+questionary
+pytest
+pytest-mock
+openai
+rapidfuzz
+google-generativeai
