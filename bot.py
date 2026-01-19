@@ -151,18 +151,19 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await check_auth(update): return
     
     doc = update.message.document
+    safe_filename = os.path.basename(doc.file_name)
     file = await doc.get_file()
-    path = f"./inputs/inbox/{doc.file_name}"
+    path = f"./inputs/inbox/{safe_filename}"
     
     await file.download_to_drive(path)
-    await update.message.reply_text(f"📥 Pobrałem {doc.file_name}.")
+    await update.message.reply_text(f"📥 Pobrałem {safe_filename}.")
     
     try:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, wiedza.process_note, path)
         
         import shutil
-        shutil.move(path, f"./archive/{doc.file_name}")
+        shutil.move(path, f"./archive/{safe_filename}")
         await update.message.reply_text("✅ Dodano do bazy wiedzy.")
     except Exception as e:
         await update.message.reply_text(f"❌ Błąd: {e}")

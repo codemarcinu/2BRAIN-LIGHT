@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def test_pdf_ocr(pdf_path):
+def manual_pdf_ocr(pdf_path):
     print(f"Testing OCR on: {pdf_path}")
     client = vision.ImageAnnotatorClient()
     
@@ -37,4 +37,4 @@ def test_pdf_ocr(pdf_path):
     return False
 
 if __name__ == "__main__":
-    test_pdf_ocr("inputs/paragony/2601176723143218.pdf")
+    manual_pdf_ocr("inputs/paragony/2601176723143218.pdf")

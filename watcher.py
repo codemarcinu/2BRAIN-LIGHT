@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 DRIVE_FOLDER_ID = "1SzA0IQuKIvVF2lpUMwH00vpPQXD2PK0P"
-CREDENTIALS_FILE = "../credentials.json"
+CREDENTIALS_FILE = "credentials.json"
 TOKEN_FILE = "token.json"
 HISTORY_FILE = "history.json"
 INPUT_DIR = "./inputs/inbox"
@@ -33,7 +33,13 @@ def authenticate():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
+            try:
+                # Na lokalnej maszynie spróbuj standardowo
+                creds = flow.run_local_server(port=0)
+            except Exception:
+                # Na serwerze (Headless)
+                print("⚠️ Nie można uruchomić serwera lokalnego. Przełączam na tryb konsolowy.")
+                creds = flow.run_console()
         with open(TOKEN_FILE, 'w') as token:
             token.write(creds.to_json())
             
