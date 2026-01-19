@@ -6,13 +6,46 @@ from datetime import datetime
 
 load_dotenv()
 
+VAULT_DIR = os.getenv("OBSIDIAN_VAULT_PATH") or os.getenv("VAULT_PATH") or "./data/vault"
 INBOX_DIR = "./inputs/inbox"
-VAULT_DIR = os.getenv("VAULT_PATH", "./outputs/vault")
 ARCHIVE_DIR = "./archive"
 
+if not os.path.exists(VAULT_DIR):
+    try:
+        os.makedirs(VAULT_DIR, exist_ok=True)
+    except Exception as e:
+        print(f"⚠️ Nie można utworzyć katalogu VAULT: {e}. Używam ./data/vault")
+        VAULT_DIR = "./data/vault"
+        os.makedirs(VAULT_DIR, exist_ok=True)
+
+
 def process_note(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    ext = os.path.splitext(file_path)[1].lower()
+    content = ""
+    
+    if ext == '.pdf':
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(file_path)
+            for page in reader.pages:
+                text = page.extract_text()
+                if text:
+                    content += text + "\n"
+        except Exception as e:
+            print(f"❌ Błąd odczytu PDF: {e}")
+            return
+    else:
+        # Default text handling
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            print(f"❌ Błąd kodowania pliku: {file_path}")
+            return
+
+    if not content.strip():
+        print("⚠️ Pusta zawartość notatki.")
+        return
         
     prompt = f"""
     Jesteś ekspertem od zarządzania wiedzą (PKM). Przeanalizuj poniższy tekst.

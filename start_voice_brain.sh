@@ -8,6 +8,10 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+
+# Aktywacja wirtualnego srodowiska
+source venv/bin/activate
+
 # Uruchom Watchera w tle
 echo "👀 Uruchamiam Watchera (Google Drive)..."
 python watcher.py > watcher.log 2>&1 &
