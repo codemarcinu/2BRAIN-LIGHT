@@ -1,7 +1,11 @@
 #!/bin/bash
 
+# Przejdź do katalogu projektu (tam gdzie jest ten skrypt)
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$DIR"
+
 if [ ! -f ".env" ]; then
-    echo "❌ BŁĄD: Brak pliku .env. Skopiuj .env.example i uzupełnij klucze!"
+    echo "❌ BŁĄD: Brak pliku .env w $DIR. Skopiuj .env.example i uzupełnij klucze!"
     exit 1
 fi
 
