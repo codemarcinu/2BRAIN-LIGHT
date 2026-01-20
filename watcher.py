@@ -19,6 +19,7 @@ CREDENTIALS_FILE = "credentials.json"
 TOKEN_FILE = "token.json"
 HISTORY_FILE = "history.json"
 INPUT_DIR = "./inputs/inbox"
+ERROR_DIR = "./inputs/error"
 SCAN_INTERVAL = 60  # Co ile sekund sprawdzać
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -98,10 +99,10 @@ def main():
                 logging.info(f"⚡ Wykryto {len(new_files)} nowych plikow.")
                 
                 for file in new_files:
+                    file_id = file['id']
+                    file_name = file['name']
+                    local_path = None
                     try:
-                        file_id = file['id']
-                        file_name = file['name']
-                        
                         logging.info(f"📥 Pobieram: {file_name}")
                         local_path = download_file(service, file_id, file_name)
                         
@@ -116,9 +117,20 @@ def main():
                         
                         history.add(file_id)
                         save_history(history)
+                        logging.info(f"✅ Przetworzono i zapisano historie: {file_name}")
                         
                     except Exception as e:
                         logging.error(f"❌ Blad przy pliku {file['name']}: {e}")
+                        # Dead Letter Queue
+                        if local_path and os.path.exists(local_path):
+                            if not os.path.exists(ERROR_DIR): os.makedirs(ERROR_DIR)
+                            import shutil
+                            try:
+                                shutil.move(local_path, os.path.join(ERROR_DIR, file_name))
+                                logging.info(f"📦 Przeniesiono do error: {file_name}")
+                            except Exception as move_e:
+                                logging.error(f"❌ Nie udalo sie przeniesc pliku do error: {move_e}")
+
             
         except Exception as e:
             logging.error(f"❌ Blad petli glownej: {e}")
