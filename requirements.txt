@@ -16,3 +16,4 @@ pydub
 psutil
 pypdf
 pdf2image
+SQLAlchemy

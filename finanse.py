@@ -3,7 +3,8 @@ import time
 import shutil
 import json
 import io
-import psycopg2
+# import psycopg2 (Removed)
+from core.database import SessionLocal, Receipt
 from google.cloud import vision
 from pdf2image import convert_from_path
 # import ollama
@@ -77,36 +78,50 @@ def parse_receipt_with_openai(ocr_text):
         return None
 
 def save_to_postgres(data, raw_text):
+    session = SessionLocal()
     try:
-        conn = psycopg2.connect(
-            host=os.getenv("DB_HOST", "psql01.mikr.us"),
-            database=os.getenv("DB_NAME", "db_joanna114"),
-            user=os.getenv("DB_USER", "joanna114"),
-            password=os.getenv("DB_PASS"),
-            port=os.getenv("DB_PORT", "5432")
+        new_receipt = Receipt(
+            date=data.get('date'),
+            shop_name=data.get('shop', 'Nieznany'),
+            total_amount=data.get('total', 0.0),
+            category=data.get('category', 'Inne'),
+            items_json=[], # No detailed items anymore
+            raw_text=raw_text
         )
-        cur = conn.cursor()
-        
-        # Schema expects items_json, so we pass empty list to satisfy it
-        # The prompt returns keys: shop, date, total, category, currency
-        
-        cur.execute("""
-            INSERT INTO receipts (date, shop_name, total_amount, category, items_json, raw_text)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (
-            data.get('date'),
-            data.get('shop', 'Nieznany'),
-            data.get('total', 0.0),
-            data.get('category', 'Inne'),
-            json.dumps([]), # No detailed items anymore
-            raw_text
-        ))
-        
-        conn.commit()
-        conn.close()
+        session.add(new_receipt)
+        session.commit()
         print(f"💰 [FINANSE] Zapisano: {data.get('shop')} | {data.get('total')} PLN | {data.get('category')}")
     except Exception as e:
+        session.rollback()
         print(f"❌ Błąd zapisu do DB: {e}")
+    finally:
+        session.close()
+
+def process_expense_text(text):
+    """Przetwarza tekstowy opis wydatku (np. z Voice)"""
+    from openai import OpenAI
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    prompt = f"""
+    Przeanalizuj tekst i wyciągnij informację o wydatku.
+    Tekst: "{text}"
+    Zwróć JSON: {{"shop": "Sklep", "total": 0.0, "category": "Kategoria", "date": "YYYY-MM-DD"}} (dzisiejsza data).
+    Jeśli nie jesteś pewien, zgadnij lub ustaw "Nieznany".
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            messages=[{'role': 'user', 'content': prompt}],
+            response_format={"type": "json_object"}
+        )
+        data = json.loads(response.choices[0].message.content)
+        if not data.get('date'): data['date'] = datetime.now().strftime("%Y-%m-%d")
+        
+        save_to_postgres(data, text)
+        return f"✅ Dodano wydatek: {data.get('shop')} ({data.get('total')} PLN)"
+    except Exception as e:
+        return f"❌ Błąd dodawania wydatku: {e}"
 
 def process_receipt_image(image_path, verbose=True):
     """Funkcja dostępna dla Bota i CLI"""
