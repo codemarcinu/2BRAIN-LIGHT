@@ -7,7 +7,10 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import finanse
 import wiedza
-import pantry
+import finanse
+import wiedza
+# import pantry (Removed)
+
 
 # Konfiguracja
 load_dotenv()
@@ -70,35 +73,32 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = await transcribe_audio(file_path)
         await status_msg.edit_text(f"🗣️ \"{text}\"")
         
-        # 2. Logika Pantry (Router)
-        # Pobieramy stan lodówki jako kontekst dla mądrzejszej decyzji
-        all_items = pantry.get_all_stock()
-        candidates = [{"name": item} for item in all_items]
-        
-        # Próbujemy najpierw sprawdzić, czy to nie jest komenda sprzątania/zużycia
-        stats = pantry.process_human_feedback(candidates, text)
-        
-        response_msg = ""
-        # Jeśli wykryto jakieś akcje na istniejących produktach
-        if stats and sum(stats.values()) > 0:
-            response_msg += (
-                f"✅ Zaktualizowano:\n"
-                f"😋 Zjedzone: {stats['consumed']}\n"
-                f"🗑️ Wyrzucone: {stats['trashed']}\n"
-                f"📅 Przedłużone: {stats['extended']}\n"
-            )
-        
-        # Jeśli nic nie usunięto, albo tekst brzmi jak zakupy ("Kupiłem...")
-        # To próbujemy dodać nowe produkty.
-        # Sprytny hack: jeśli 'process_human_feedback' nic nie zrobił, to na 99% są to zakupy.
-        if not stats or sum(stats.values()) == 0:
-            added = pantry.add_items_from_text(text)
-            if added > 0:
-                response_msg += f"🛒 Dodano {added} nowych produktów."
-            elif not response_msg:
-                response_msg = "🤔 Nie zrozumiałem intencji (ani sprzątanie, ani zakupy)."
-
-        await update.message.reply_text(response_msg)
+        # 2. Logic: Expense vs Note
+        user_text_lower = text.lower()
+        if "kupiłem" in user_text_lower or "wydałem" in user_text_lower:
+             # Process as Expense
+             await status_msg.edit_text("💸 Przetwarzam jako wydatek...")
+             loop = asyncio.get_running_loop()
+             result_msg = await loop.run_in_executor(None, finanse.process_expense_text, text)
+             await update.message.reply_text(result_msg)
+        else:
+             # Process as Note/Knowledge
+             await status_msg.edit_text("📝 Przetwarzam jako notatkę...")
+             filename = f"voice_note_{update.message.id}.txt"
+             txt_path = f"./inputs/inbox/{filename}"
+             if not os.path.exists("./inputs/inbox"): os.makedirs("./inputs/inbox")
+             
+             with open(txt_path, "w", encoding="utf-8") as f:
+                 f.write(text)
+             
+             loop = asyncio.get_running_loop()
+             await loop.run_in_executor(None, wiedza.process_note, txt_path)
+             
+             import shutil
+             if not os.path.exists("./archive"): os.makedirs("./archive")
+             shutil.move(txt_path, f"./archive/{filename}")
+             
+             await update.message.reply_text("✅ Notatka zapisana w bazie wiedzy!")
 
     except Exception as e:
         await update.message.reply_text(f"❌ Błąd: {e}")

@@ -28,18 +28,7 @@ def create_tables():
         );
     """)
     
-    # Tabela: pantry (Spiżarnia + Lodówka)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS pantry (
-            id SERIAL PRIMARY KEY,
-            product_name VARCHAR(255),
-            category VARCHAR(100),
-            purchase_date DATE,
-            estimated_expiry DATE,
-            status VARCHAR(50) DEFAULT 'IN_STOCK', -- IN_STOCK, CONSUMED, TRASHED
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
+    # Tabela: pantry (USUNIĘTA)
 
     conn.commit()
     cur.close()
