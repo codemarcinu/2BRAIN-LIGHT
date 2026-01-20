@@ -33,10 +33,10 @@ TELEGRAM_TOKEN="123456789:ABCDEF..."
 ALLOWED_USER_ID="Twoje_ID_Telegram"
 
 # Database (PostgreSQL)
-DB_HOST="psql01.mikr.us"
-DB_NAME="db_xxx"
-DB_USER="user_xxx"
-DB_PASS="haslo"
+DB_HOST="your-db-host"
+DB_NAME="your-db-name"
+DB_USER="your-db-user"
+DB_PASS="your-password"
 DB_PORT="5432"
 
 # Paths

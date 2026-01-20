@@ -30,10 +30,10 @@ GOOGLE_APPLICATION_CREDENTIALS="path/to/google_key.json"
 OPENAI_API_KEY="sk-..."
 
 # Database
-DB_HOST="psql01.mikr.us"
-DB_NAME="db_name"
-DB_USER="user"
-DB_PASS="password"
+DB_HOST="your-db-host"
+DB_NAME="your-db-name"
+DB_USER="your-db-user"
+DB_PASS="your-password"
 ```
 
 ## Obsługiwane Typy Danych

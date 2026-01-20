@@ -25,16 +25,16 @@ Projekt zoptymalizowany pod serwery o ograniczonych zasobach (np. **Mikr.us**):
 - **Baza**: PostgreSQL (Mikr.us psql01).
 - **Zasoby**: Wymaga < 1GB RAM.
 
-## Serwer Mikr.us (Wdrożenie)
+## Serwer (Wdrożenie)
 
-1. **Połącz się przez SSH**: `ssh root@joanna114.mikrus.xyz -p10114`
+1. **Połącz się przez SSH**: `ssh user@your-server.com`
 2. **Uruchom skrypt konfiguracji**:
    ```bash
-   chmod +x setup_mikrus.sh run_all.sh
+   chmod +x setup_mikrus.sh
    ./setup_mikrus.sh
    ```
 3. **Konfiguracja**: Uzupełnij `.env` oraz wgraj `google_key.json` i `credentials.json`.
-4. **Uruchomienie**: `./run_all.sh`
+4. **Uruchomienie**: `docker-compose up -d`
 
 ## Zarządzanie
 - Lista usług: `screen -ls`

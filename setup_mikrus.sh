@@ -5,7 +5,7 @@ if [ "$EUID" -eq 0 ]; then
   exit 1
 fi
 
-echo "🚀 Rozpoczynam konfigurację 2Brain Lite na Mikr.us..."
+echo "🚀 Rozpoczynam konfigurację 2Brain Lite..."
 
 # 1. Instalacja zależności systemowych
 echo "📦 Instaluję zależności systemowe..."

@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 # Konfiguracja
 load_dotenv()
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-DRIVE_FOLDER_ID = "1SzA0IQuKIvVF2lpUMwH00vpPQXD2PK0P"
+DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 CREDENTIALS_FILE = "credentials.json"
 TOKEN_FILE = "token.json"
 HISTORY_FILE = "history.json"

@@ -28,10 +28,10 @@ def check_db():
     print("\n🐘 Checking database connectivity...")
     try:
         conn = psycopg2.connect(
-            host=os.getenv("DB_HOST", "psql01.mikr.us"),
-            database=os.getenv("DB_NAME", "db_joanna114"),
-            user=os.getenv("DB_USER", "joanna114"),
-            password=os.getenv("DB_PASS"),
+            host=os.getenv("DB_HOST", "localhost"),
+            database=os.getenv("DB_NAME", "postgres"),
+            user=os.getenv("DB_USER", "postgres"),
+            password=os.getenv("DB_PASS", "password"),
             port=os.getenv("DB_PORT", "5432"),
             connect_timeout=5
         )
